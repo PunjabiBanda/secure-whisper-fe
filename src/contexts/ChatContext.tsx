@@ -18,13 +18,24 @@ export interface ChatUser {
   status: "online" | "offline";
 }
 
+export interface Group {
+  id: string;
+  name: string;
+  members: string[];
+  memberCount: number;
+  lastActivity: Date;
+}
+
 interface ChatContextType {
   messages: Message[];
   selectedUser: ChatUser | null;
+  selectedGroup: Group | null;
   users: ChatUser[];
+  groups: Group[];
   encryptionKey: CryptoKey | null;
   sendEncryptedMessage: (text: string) => Promise<void>;
   selectUser: (user: ChatUser) => void;
+  selectGroup: (group: Group) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -35,6 +46,30 @@ const DEMO_USERS: ChatUser[] = [
   { id: "user2", name: "Bob Smith", email: "bob@secure.com", status: "online" },
   { id: "user3", name: "Carol Davis", email: "carol@secure.com", status: "offline" },
   { id: "user4", name: "David Brown", email: "david@secure.com", status: "online" },
+];
+
+const DEMO_GROUPS: Group[] = [
+  { 
+    id: "group1", 
+    name: "Security Team", 
+    members: ["user1", "user2", "current"],
+    memberCount: 3,
+    lastActivity: new Date(Date.now() - 1200000)
+  },
+  { 
+    id: "group2", 
+    name: "Project Alpha", 
+    members: ["user1", "user3", "user4", "current"],
+    memberCount: 4,
+    lastActivity: new Date(Date.now() - 3600000)
+  },
+  { 
+    id: "group3", 
+    name: "Dev Team", 
+    members: ["user2", "user4", "current"],
+    memberCount: 3,
+    lastActivity: new Date(Date.now() - 7200000)
+  },
 ];
 
 const DEMO_MESSAGES: Message[] = [
@@ -76,10 +111,51 @@ const DEMO_MESSAGES: Message[] = [
   },
 ];
 
+const DEMO_GROUP_MESSAGES: Message[] = [
+  {
+    id: "gmsg1",
+    senderId: "user1",
+    senderName: "Alice Johnson",
+    text: "Team, we need to review the new security protocols.",
+    timestamp: new Date(Date.now() - 7200000),
+    encrypted: true,
+    isOwn: false,
+  },
+  {
+    id: "gmsg2",
+    senderId: "user2",
+    senderName: "Bob Smith",
+    text: "I've already started working on the implementation.",
+    timestamp: new Date(Date.now() - 5400000),
+    encrypted: true,
+    isOwn: false,
+  },
+  {
+    id: "gmsg3",
+    senderId: "current",
+    senderName: "You",
+    text: "Great! I'll review the changes and provide feedback by EOD.",
+    timestamp: new Date(Date.now() - 3600000),
+    encrypted: true,
+    isOwn: true,
+  },
+  {
+    id: "gmsg4",
+    senderId: "user1",
+    senderName: "Alice Johnson",
+    text: "Perfect. Let's schedule a sync-up meeting for tomorrow.",
+    timestamp: new Date(Date.now() - 1800000),
+    encrypted: true,
+    isOwn: false,
+  },
+];
+
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>(DEMO_MESSAGES);
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(DEMO_USERS[0]);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [users] = useState<ChatUser[]>(DEMO_USERS);
+  const [groups] = useState<Group[]>(DEMO_GROUPS);
   const [encryptionKey, setEncryptionKey] = useState<CryptoKey | null>(null);
 
   // Initialize encryption key
@@ -144,7 +220,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const selectUser = (user: ChatUser) => {
     setSelectedUser(user);
+    setSelectedGroup(null);
+    setMessages(DEMO_MESSAGES);
     // TODO: Load messages for this user from Firebase
+  };
+
+  const selectGroup = (group: Group) => {
+    setSelectedGroup(group);
+    setSelectedUser(null);
+    setMessages(DEMO_GROUP_MESSAGES);
+    // TODO: Load messages for this group from Firebase
   };
 
   return (
@@ -152,10 +237,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       value={{
         messages,
         selectedUser,
+        selectedGroup,
         users,
+        groups,
         encryptionKey,
         sendEncryptedMessage,
         selectUser,
+        selectGroup,
       }}
     >
       {children}

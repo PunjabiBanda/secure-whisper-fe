@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 export default function Chat() {
   const [messageText, setMessageText] = useState("");
-  const { messages, selectedUser, sendEncryptedMessage } = useChat();
+  const { messages, selectedUser, selectedGroup, sendEncryptedMessage } = useChat();
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,8 +22,8 @@ export default function Chat() {
       return;
     }
 
-    if (!selectedUser) {
-      toast.error("Please select a user to chat with");
+    if (!selectedUser && !selectedGroup) {
+      toast.error("Please select a user or group to chat with");
       return;
     }
 
@@ -53,8 +53,13 @@ export default function Chat() {
                 <h2 className="font-semibold text-lg">{selectedUser.name}</h2>
                 <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
               </div>
+            ) : selectedGroup ? (
+              <div>
+                <h2 className="font-semibold text-lg">{selectedGroup.name}</h2>
+                <p className="text-sm text-muted-foreground">{selectedGroup.memberCount} members</p>
+              </div>
             ) : (
-              <p className="text-muted-foreground">Select a user to start chatting</p>
+              <p className="text-muted-foreground">Select a contact or group to start chatting</p>
             )}
           </div>
 
@@ -77,13 +82,13 @@ export default function Chat() {
                     onChange={(e) => setMessageText(e.target.value)}
                     placeholder="Type a message... (will be encrypted)"
                     className="flex-1"
-                    disabled={!selectedUser}
+                    disabled={!selectedUser && !selectedGroup}
                   />
                   <Button
                     type="submit"
                     size="icon"
                     variant="gradient"
-                    disabled={!selectedUser || !messageText.trim()}
+                    disabled={(!selectedUser && !selectedGroup) || !messageText.trim()}
                   >
                     <Send className="h-4 w-4" />
                   </Button>
